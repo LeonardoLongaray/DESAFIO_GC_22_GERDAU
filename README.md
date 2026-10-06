@@ -11,27 +11,27 @@
 <table align="left-center">
   <tr>
   <td align="center">
-      <img src="./assets/longaray.png" width="120"><br>
+      <img src="./assets/longaray.jpeg" width="120"><br>
       <b>Leonardo Longaray</b><br>
       <sub>PO: IA e Dados</sub>
       
   <td align="center">
-      <img src="./assets/gabriel.png" width="120"><br>
+      <img src="./assets/gabriel.jpeg" width="120"><br>
       <b>Gabriel Bruno</b><br>
       <sub>SM: IA e Dados</sub>
   
   <td align="center">
-      <img src="./assets/matheus.png" width="120"><br>
+      <img src="./assets/matheus.jpeg" width="120"><br>
       <b>Matheus Ferreira</b><br>
       <sub>Java</sub>
     
   <td align="center">
-      <img src="./assets/ray.png" width="120"><br>
+      <img src="./assets/ray.jpeg" width="120"><br>
       <b>Rayssa </b><br>
       <sub>IA e Dados</sub>
     
   <td align="center">
-      <img src="./assets/luis.png" width="120"><br>
+      <img src="./assets/luis.jpeg" width="120"><br>
       <b>Luis Felipe</b><br>
       <sub>Java</sub>
     </td>

@@ -11,7 +11,7 @@
 <table align="left-center">
   <tr>
   <td align="center">
-      <img src="./assets/longaray.jpeg" width="120"><br>
+      <img src="./assets/longaray.png" width="120"><br>
       <b>Leonardo Longaray</b><br>
       <sub>PO: IA e Dados</sub>
       

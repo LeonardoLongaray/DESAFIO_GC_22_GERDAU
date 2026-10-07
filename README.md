@@ -31,7 +31,7 @@
       <sub>IA e Dados</sub>
     
   <td align="center">
-      <img src="./assets/luis.jpeg" width="120"><br>
+      <img src="./assets/luis.png" width="120"><br>
       <b>Luis Felipe</b><br>
       <sub>Java</sub>
     </td>

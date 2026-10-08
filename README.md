@@ -6,7 +6,7 @@
   <img src="./assets/caldeira.png" width="200">
 </p>
 
-## 👥 Equipe
+## 👥 Equipe 22 3Cs
 
 <table align="left-center">
   <tr>

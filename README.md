@@ -3,8 +3,7 @@
 <p align="left-center">
   <img src="./assets/gerdau.png" width="250">
   <img src="./assets/iadados.png" width="250">
-  <img src="./assets/caldeira.jpeg" width="200">
-  <img src="./assets/icaldeira.jpeg" width="250">
+  <img src="./assets/caldeira.png" width="200">
 </p>
 
 ## 👥 Equipe

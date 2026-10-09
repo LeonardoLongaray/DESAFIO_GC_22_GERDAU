@@ -1,5 +1,3 @@
-package com.Gerdau.Desafio_GC_Gerdau_App;
-
 /**
  * # Desafio GC Gerdau App
  *

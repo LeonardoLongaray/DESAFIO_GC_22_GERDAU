@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Benchmark NBS</title>
+<style>
+:root{--bg:#f3f6f8;--card:#fff;--ink:#173247;--muted:#617382;--line:#dbe4e9;--accent:#176b70;--accent2:#e5f2f1;--warn:#fff4dc;--shadow:0 8px 28px rgba(22,48,67,.07)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:#15324b;color:#fff;padding:30px 20px}
+header .wrap,main{max-width:1120px;margin:auto}
+header h1{margin:0 0 7px;font-size:clamp(1.6rem,3vw,2.3rem)}
+header p{margin:0;color:#d7e4ec;max-width:800px}
+main{padding:22px 18px 44px}
+.notice{background:var(--warn);border:1px solid #f0dfb7;padding:12px 15px;border-radius:12px;margin-bottom:18px;color:#5c4718}
+.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+h2{font-size:1.15rem;margin:0 0 14px}
+h3{font-size:1rem;margin:18px 0 8px}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:.88rem;font-weight:650}
+input[type=number]{width:100%;border:1px solid #c8d5dd;border-radius:9px;padding:10px 11px;font:inherit;color:var(--ink);background:#fff}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.small{font-size:.8rem;color:var(--muted)}
+.range-row{display:grid;grid-template-columns:1fr 88px;gap:12px;align-items:center;margin:12px 0}
+.range-row input[type=number]{padding:7px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:#f1f6f8;border-radius:12px;padding:13px}
+.kpi .label{font-size:.8rem;color:var(--muted)}
+.kpi .value{font-size:1.45rem;font-weight:750;letter-spacing:-.03em;overflow-wrap:anywhere}
+.kpi .detail{font-size:.78rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:650}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+button{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer;background:var(--accent);color:#fff}
+button.secondary{background:#e7eef2;color:var(--ink)}
+button:hover{filter:brightness(.97)}
+.pill{display:inline-block;background:var(--accent2);color:#15575b;padding:3px 8px;border-radius:99px;font-size:.78rem;font-weight:700}
+.footer{color:var(--muted);font-size:.82rem;margin-top:15px}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.field-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.field-grid,.kpis{grid-template-columns:1fr}.range-row{grid-template-columns:1fr 78px}main{padding:14px 10px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Calculadora de Benchmark NBS</h1>
+  <p>Explore cenários de tempo, custo e esforço para classificar 9.795 descrições de serviços usando trabalho humano e PostgreSQL com fuzzy matching.</p>
+</div></header>
+<main>
+  <div class="notice"><strong>Importante:</strong> os valores iniciais são exemplos editáveis, não medições reais. O cálculo ocorre localmente no navegador; nada é enviado para um servidor.</div>
+  <div class="layout">
+    <section>
+      <div class="card">
+        <h2>1. Volume e esforço humano</h2>
+        <div class="field-grid">
+          <div class="field"><label for="n">Linhas a classificar</label><input id="n" type="number" min="1" step="1" value="9795"></div>
+          <div class="field"><label for="secondsHuman">Segundos médios por linha</label><input id="secondsHuman" type="number" min="0" step="1" value="52"></div>
+          <div class="field"><label for="reviewHuman">Revisão adicional humana (%)</label><input id="reviewHuman" type="number" min="0" step="1" value="0"></div>
+          <div class="field"><label for="people">Pessoas na equipe</label><input id="people" type="number" min="1" step="1" value="1"></div>
+          <div class="field"><label for="hoursDay">Horas por dia útil</label><input id="hoursDay" type="number" min="1" step=".5" value="8"></div>
+          <div class="field"><label for="hourRate">Custo completo por hora (R$)</label><input id="hourRate" type="number" min="0" step="1" value="40"></div>
+        </div>
+        <h3>Atalho de tempo por linha</h3>
+        <div class="range-row">
+          <input id="humanRange" type="range" min="5" max="180" step="5" value="52" aria-label="Tempo humano em segundos">
+          <input id="humanRangeValue" type="number" min="0" max="3600" step="1" value="52" aria-label="Tempo humano em segundos, valor numérico">
+        </div>
+        <div class="small">O controle deslizante atualiza o tempo médio em segundos. Também podes digitar um valor diretamente.</div>
+      </div>
+
+      <div class="card">
+        <h2>2. PostgreSQL + fuzzy matching</h2>
+        <div class="field-grid">
+          <div class="field"><label for="pgSeconds">Execução técnica (segundos)</label><input id="pgSeconds" type="number" min="0" step=".1" value="120"></div>
+          <div class="field"><label for="pgPrepMinutes">Preparação por lote (minutos)</label><input id="pgPrepMinutes" type="number" min="0" step="1" value="10"></div>
+          <div class="field"><label for="pgReviewHours">Revisão humana (horas)</label><input id="pgReviewHours" type="number" min="0" step=".1" value="8"></div>
+          <div class="field"><label for="pgInfra">Infraestrutura por lote (R$)</label><input id="pgInfra" type="number" min="0" step=".01" value="10"></div>
+          <div class="field"><label for="devHours">Desenvolvimento inicial (horas)</label><input id="devHours" type="number" min="0" step=".5" value="16"></div>
+          <div class="field"><label for="maintenance">Manutenção por lote (R$)</label><input id="maintenance" type="number" min="0" step=".01" value="0"></div>
+          <div class="field"><label for="pgAccuracy">Precisão automática estimada (%)</label><input id="pgAccuracy" type="number" min="0" max="100" step=".1" value="90"></div>
+          <div class="field"><label for="pgCoverage">Cobertura automática (%)</label><input id="pgCoverage" type="number" min="0" max="100" step=".1" value="70"></div>
+        </div>
+        <p class="small">Precisão e cobertura são campos para cenários. Devem ser substituídos por valores medidos contra uma referência independente.</p>
+      </div>
+
+      <div class="card">
+        <h2>3. LLM (referência opcional)</h2>
+        <div class="field-grid">
+          <div class="field"><label for="llmSeconds">Tempo total de API (segundos)</label><input id="llmSeconds" type="number" min="0" step="1" value="300"></div>
+          <div class="field"><label for="llmReviewHours">Revisão humana (horas)</label><input id="llmReviewHours" type="number" min="0" step=".1" value="5"></div>
+          <div class="field"><label for="llmApi">Custo de API por lote (R$)</label><input id="llmApi" type="number" min="0" step=".01" value="25"></div>
+          <div class="field"><label for="llmInfra">Infraestrutura por lote (R$)</label><input id="llmInfra" type="number" min="0" step=".01" value="0"></div>
+          <div class="field"><label for="llmDev">Preparação/desenvolvimento (horas)</label><input id="llmDev" type="number" min="0" step=".5" value="4"></div>
+          <div class="field"><label for="llmAccuracy">Precisão estimada (%)</label><input id="llmAccuracy" type="number" min="0" max="100" step=".1" value="92"></div>
+        </div>
+        <p class="small">Preenche os custos reais do provedor e o tempo de revisão medido. Os valores iniciais são apenas demonstrativos.</p>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h2>Resultados em tempo real</h2>
+        <span class="pill">Cenário atual</span>
+        <h3>Trabalho humano</h3>
+        <div class="kpis">
+          <div class="kpi"><div class="label">Horas de classificação</div><div class="value" id="humanHours">—</div></div>
+          <div class="kpi"><div class="label">Dias de equipe</div><div class="value" id="humanDays">—</div></div>
+          <div class="kpi"><div class="label">Custo humano estimado</div><div class="value" id="humanCost">—</div></div>
+          <div class="kpi"><div class="label">Horas totais com revisão</div><div class="value" id="humanTotal">—</div></div>
+        </div>
+        <hr>
+        <h3>PostgreSQL</h3>
+        <div class="kpis">
+          <div class="kpi"><div class="label">Tempo técnico + preparação</div><div class="value" id="pgTech">—</div></div>
+          <div class="kpi"><div class="label">Speedup técnico</div><div class="value" id="speedup">—</div></div>
+          <div class="kpi"><div class="label">Custo operacional por lote</div><div class="value" id="pgOpCost">—</div></div>
+          <div class="kpi"><div class="label">Custo inicial + 1º lote</div><div class="value" id="pgFirstCost">—</div></div>
+          <div class="kpi"><div class="label">Tempo até validação</div><div class="value" id="pgValidated">—</div></div>
+          <div class="kpi"><div class="label">Acertos automáticos estimados</div><div class="value" id="pgAutoCorrect">—</div><div class="detail">Aproximação baseada em precisão × cobertura</div></div>
+        </div>
+        <hr>
+        <h3>LLM</h3>
+        <div class="kpis">
+          <div class="kpi"><div class="label">Tempo técnico de API</div><div class="value" id="llmTech">—</div></div>
+          <div class="kpi"><div class="label">Custo operacional por lote</div><div class="value" id="llmOpCost">—</div></div>
+          <div class="kpi"><div class="label">Custo inicial + 1º lote</div><div class="value" id="llmFirstCost">—</div></div>
+          <div class="kpi"><div class="label">Acertos estimados (todas as linhas)</div><div class="value" id="llmCorrect">—</div></div>
+        </div>
+        <div class="footer">“Speedup técnico” compara o tempo humano de classificação com a execução técnica do PostgreSQL. Não representa a economia total de calendário quando há revisão.</div>
+      </div>
+      <div class="card">
+        <h2>Comparação resumida</h2>
+        <table>
+          <thead><tr><th>Indicador</th><th>Humano</th><th>PostgreSQL</th><th>LLM</th></tr></thead>
+          <tbody>
+            <tr><td>Tempo técnico</td><td id="cmpHumanTime">—</td><td id="cmpPgTime">—</td><td id="cmpLlmTime">—</td></tr>
+            <tr><td>Custo operacional</td><td id="cmpHumanCost">—</td><td id="cmpPgCost">—</td><td id="cmpLlmCost">—</td></tr>
+            <tr><td>Qualidade estimada</td><td>Referência a medir</td><td id="cmpPgQuality">—</td><td id="cmpLlmQuality">—</td></tr>
+          </tbody>
+        </table>
+        <div class="actions">
+          <button id="reset">Restaurar exemplos</button>
+          <button class="secondary" id="export">Baixar resultados CSV</button>
+          <button class="secondary" id="copy">Copiar resumo</button>
+        </div>
+        <p class="small" id="copyStatus" aria-live="polite"></p>
+      </div>
+    </aside>
+  </div>
+  <div class="card">
+    <h2>Fórmulas utilizadas</h2>
+    <table>
+      <tbody>
+        <tr><th>Horas humanas</th><td>linhas × segundos por linha ÷ 3.600</td></tr>
+        <tr><th>Horas humanas totais</th><td>horas de classificação × (1 + percentual de revisão ÷ 100)</td></tr>
+        <tr><th>Custo humano</th><td>horas humanas totais × custo completo por hora</td></tr>
+        <tr><th>Tempo técnico PostgreSQL</th><td>segundos de execução + minutos de preparação × 60</td></tr>
+        <tr><th>Custo operacional PostgreSQL</th><td>horas de revisão × custo/hora + infraestrutura + manutenção</td></tr>
+        <tr><th>Custo inicial + 1º lote PostgreSQL</th><td>custo operacional + horas de desenvolvimento × custo/hora</td></tr>
+        <tr><th>Speedup técnico</th><td>horas humanas de classificação ÷ horas de execução técnica PostgreSQL</td></tr>
+        <tr><th>Acertos automáticos estimados</th><td>linhas × cobertura automática × precisão automática</td></tr>
+      </tbody>
+    </table>
+    <p class="footer">Estimativas financeiras simplificadas: custos de treinamento, licenças, manutenção futura, retrabalho e erros só entram quando informados. A calculadora não valida se o código NBS está correto.</p>
+  </div>
+</main>
+<script>
+const ids = ["n","secondsHuman","reviewHuman","people","hoursDay","hourRate","pgSeconds","pgPrepMinutes","pgReviewHours","pgInfra","devHours","maintenance","pgAccuracy","pgCoverage","llmSeconds","llmReviewHours","llmApi","llmInfra","llmDev","llmAccuracy"];
+const defaults = {n:9795,secondsHuman:52,reviewHuman:0,people:1,hoursDay:8,hourRate:40,pgSeconds:120,pgPrepMinutes:10,pgReviewHours:8,pgInfra:10,devHours:16,maintenance:0,pgAccuracy:90,pgCoverage:70,llmSeconds:300,llmReviewHours:5,llmApi:25,llmInfra:0,llmDev:4,llmAccuracy:92};
+const el = id => document.getElementById(id);
+const num = id => Math.max(0, Number(el(id).value) || 0);
+const fmt = (x,d=1) => Number.isFinite(x) ? x.toLocaleString("pt-BR",{maximumFractionDigits:d,minimumFractionDigits:0}) : "—";
+const money = x => "R$ " + fmt(x,2);
+const duration = seconds => {
+  if (!Number.isFinite(seconds)) return "—";
+  if (seconds < 60) return fmt(seconds,1)+" s";
+  if (seconds < 3600) return fmt(seconds/60,1)+" min";
+  return fmt(seconds/3600,2)+" h";
+};
+function set(id, value){el(id).textContent=value;}
+function calculate(){
+  const n=num("n"), sec=num("secondsHuman"), rev=num("reviewHuman")/100, people=Math.max(1,num("people")), day=Math.max(.1,num("hoursDay")), rate=num("hourRate");
+  const h=n*sec/3600, ht=h*(1+rev), days=ht/(people*day), hc=ht*rate;
+  const pgSec=num("pgSeconds"), prep=num("pgPrepMinutes")*60, pgTech=pgSec+prep, pgReview=num("pgReviewHours");
+  const pgOp=pgReview*rate+num("pgInfra")+num("maintenance"), pgFirst=pgOp+num("devHours")*rate;
+  const pgValidated=pgTech/3600+pgReview, pgAcc=Math.min(100,num("pgAccuracy"))/100, pgCov=Math.min(100,num("pgCoverage"))/100;
+  const pgAuto=n*pgCov, pgCorrect=pgAuto*pgAcc, speed=pgTech>0?h/(pgTech/3600):Infinity;
+  const llmSec=num("llmSeconds"), llmReview=num("llmReviewHours"), llmOp=llmReview*rate+num("llmApi")+num("llmInfra"), llmFirst=llmOp+num("llmDev")*rate, llmAcc=Math.min(100,num("llmAccuracy"))/100;
+  set("humanHours",fmt(h,2)+" h"); set("humanDays",fmt(days,1)+" dias"); set("humanCost",money(hc)); set("humanTotal",fmt(ht,2)+" h");
+  set("pgTech",duration(pgTech)); set("speedup",Number.isFinite(speed)?fmt(speed,0)+"×":"—"); set("pgOpCost",money(pgOp)); set("pgFirstCost",money(pgFirst)); set("pgValidated",fmt(pgValidated,2)+" h"); set("pgAutoCorrect",fmt(pgCorrect,0)+" / "+fmt(n,0));
+  set("llmTech",duration(llmSec)); set("llmOpCost",money(llmOp)); set("llmFirstCost",money(llmFirst)); set("llmCorrect",fmt(n*llmAcc,0)+" / "+fmt(n,0));
+  set("cmpHumanTime",fmt(ht,2)+" h"); set("cmpPgTime",duration(pgTech)); set("cmpLlmTime",duration(llmSec));
+  set("cmpHumanCost",money(hc)); set("cmpPgCost",money(pgOp)); set("cmpLlmCost",money(llmOp));
+  set("cmpPgQuality",fmt(pgAcc*100,1)+"% precisão; "+fmt(pgCov*100,1)+"% cobertura");
+  set("cmpLlmQuality",fmt(llmAcc*100,1)+"% precisão estimada");
+  window.benchmarkData = {
+    "Linhas":n,"Tempo humano por linha (s)":sec,"Revisão humana adicional (%)":num("reviewHuman"),
+    "Pessoas":people,"Horas por dia":day,"Custo por hora (R$)":rate,
+    "Horas humanas de classificação":h,"Horas humanas totais":ht,"Dias de equipe":days,"Custo humano (R$)":hc,
+    "PostgreSQL execução (s)":pgSec,"PostgreSQL preparação (min)":num("pgPrepMinutes"),"PostgreSQL tempo técnico total (s)":pgTech,
+    "PostgreSQL revisão (h)":pgReview,"PostgreSQL infraestrutura (R$)":num("pgInfra"),"Manutenção por lote (R$)":num("maintenance"),
+    "Desenvolvimento inicial (h)":num("devHours"),"PostgreSQL custo operacional (R$)":pgOp,"PostgreSQL custo inicial + lote (R$)":pgFirst,
+    "PostgreSQL precisão estimada (%)":num("pgAccuracy"),"PostgreSQL cobertura automática (%)":num("pgCoverage"),
+    "PostgreSQL acertos automáticos estimados":pgCorrect,"Speedup técnico":Number.isFinite(speed)?speed:"",
+    "LLM tempo API (s)":llmSec,"LLM revisão (h)":llmReview,"LLM API (R$)":num("llmApi"),"LLM infraestrutura (R$)":num("llmInfra"),
+    "LLM desenvolvimento (h)":num("llmDev"),"LLM custo operacional (R$)":llmOp,"LLM custo inicial + lote (R$)":llmFirst,
+    "LLM precisão estimada (%)":num("llmAccuracy"),"LLM acertos estimados":n*llmAcc
+  };
+}
+ids.forEach(id=>el(id).addEventListener("input",calculate));
+el("humanRange").addEventListener("input",()=>{el("secondsHuman").value=el("humanRange").value;el("humanRangeValue").value=el("humanRange").value;calculate()});
+el("humanRangeValue").addEventListener("input",()=>{el("secondsHuman").value=el("humanRangeValue").value;el("humanRange").value=Math.min(180,Math.max(5,num("humanRangeValue")));calculate()});
+el("secondsHuman").addEventListener("input",()=>{el("humanRange").value=Math.min(180,Math.max(5,num("secondsHuman")));el("humanRangeValue").value=el("secondsHuman").value});
+el("reset").addEventListener("click",()=>{Object.entries(defaults).forEach(([k,v])=>el(k).value=v);el("humanRange").value=defaults.secondsHuman;el("humanRangeValue").value=defaults.secondsHuman;calculate();set("copyStatus","Valores ilustrativos restaurados.")});
+el("export").addEventListener("click",()=>{
+  const data=window.benchmarkData; const rows=[["Indicador","Valor"],...Object.entries(data)];
+  const csv=rows.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(";")).join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="resultados_benchmark_NBS.csv";a.click();URL.revokeObjectURL(a.href);
+  set("copyStatus","CSV gerado com os parâmetros e resultados atuais.");
+});
+el("copy").addEventListener("click",()=>{
+  const txt=Object.entries(window.benchmarkData).map(([k,v])=>k+": "+v).join("\n");
+  if(navigator.clipboard && navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(()=>set("copyStatus","Resumo copiado."),()=>fallbackCopy(txt));}
+  else fallbackCopy(txt);
+});
+function fallbackCopy(txt){const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand("copy");set("copyStatus","Resumo copiado.");}catch(e){set("copyStatus","Não foi possível copiar automaticamente; use a exportação CSV.");}t.remove();}
+calculate();
+</script>
+</body>
+</html>

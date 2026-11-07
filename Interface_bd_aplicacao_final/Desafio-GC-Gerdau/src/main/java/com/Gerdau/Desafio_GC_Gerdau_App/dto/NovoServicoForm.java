@@ -1,0 +1,52 @@
+package com.Gerdau.Desafio_GC_Gerdau_App.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class NovoServicoForm {
+
+    @NotBlank
+    @Size(max = 50)
+    private String areaServico;
+
+    @NotBlank
+    @Size(max = 255)
+    private String textoBreve;
+
+    @NotBlank
+    @Size(max = 10)
+    @Pattern(regexp = "[A-Za-z0-9]*", message = "use apenas letras e números")
+    private String abreviatura;
+
+    @Size(max = 15)
+    @Pattern(regexp = "(_[A-Za-z0-9]*)?", message = "deve começar com _ (ex.: _CONCRE)")
+    private String complemento;
+
+    /** Sufixo da condição em cat_horarios (ex.: HN). */
+    @NotBlank
+    @Size(max = 10)
+    private String condicao;
+
+    @NotBlank
+    @Pattern(regexp = "\\d{7}", message = "CNAE deve ter 7 dígitos")
+    private String cnae;
+
+    @Size(max = 100)
+    private String criadorCodigo;
+
+    /**
+     * Preenchida só para contestar um bloqueio por texto parecido ("é outro serviço"); nos demais casos é ignorada.
+     * Não faz parte do serviço: vai para o histórico de consultas.
+     */
+    @Size(max = 500)
+    private String justificativaOutroServico;
+
+    /** Código NBS escolhido na busca; opcional. */
+    @Size(max = 20)
+    private String codigoNbs;
+}

@@ -1,0 +1,178 @@
+package com.Gerdau.Desafio_GC_Gerdau_App.controller;
+
+import com.Gerdau.Desafio_GC_Gerdau_App.model.Servico;
+import com.Gerdau.Desafio_GC_Gerdau_App.repository.CatHorarioRepository;
+import com.Gerdau.Desafio_GC_Gerdau_App.repository.CatNbsRepository;
+import com.Gerdau.Desafio_GC_Gerdau_App.repository.ServicoRepository;
+import com.Gerdau.Desafio_GC_Gerdau_App.dto.NovoServicoForm;
+import com.Gerdau.Desafio_GC_Gerdau_App.exception.CadastroRejeitadoException;
+import com.Gerdau.Desafio_GC_Gerdau_App.service.ResumoService;
+import com.Gerdau.Desafio_GC_Gerdau_App.service.ServicoService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.text.Normalizer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+@Controller
+public class ServicoViewController {
+
+    private static final int TAMANHO_PAGINA = 25;
+
+    private final ServicoRepository repository;
+    private final ServicoService service;
+    private final CatNbsRepository catNbsRepository;
+    private final CatHorarioRepository catHorarioRepository;
+    private final ResumoService resumoService;
+
+    public ServicoViewController(ServicoRepository repository, ServicoService service,
+                                 CatNbsRepository catNbsRepository, CatHorarioRepository catHorarioRepository,
+                                 ResumoService resumoService) {
+        this.repository = repository;
+        this.service = service;
+        this.catNbsRepository = catNbsRepository;
+        this.catHorarioRepository = catHorarioRepository;
+        this.resumoService = resumoService;
+    }
+
+    @GetMapping("/")
+    public String listar(@RequestParam(required = false) String area, @RequestParam(required = false) String q,
+                         @RequestParam(defaultValue = "1") String pagina, Authentication authentication, Model model) {
+        String areaFiltro = area == null ? "" : area.trim();
+        String termo = normalizar(q);
+        int numero = Math.max(numeroDaPagina(pagina), 1);
+
+        Page<Servico> resultado = repository.pesquisar(termo, areaFiltro, PageRequest.of(numero - 1, TAMANHO_PAGINA));
+        if (resultado.getTotalPages() > 0 && numero > resultado.getTotalPages()) {
+            numero = resultado.getTotalPages();
+            resultado = repository.pesquisar(termo, areaFiltro, PageRequest.of(numero - 1, TAMANHO_PAGINA));
+        }
+
+        model.addAttribute("servicos", resultado.getContent());
+        model.addAttribute("total", resultado.getTotalElements());
+        model.addAttribute("pagina", numero);
+        model.addAttribute("totalPaginas", resultado.getTotalPages());
+        model.addAttribute("de", resultado.isEmpty() ? 0 : (numero - 1) * TAMANHO_PAGINA + 1);
+        model.addAttribute("ate", (numero - 1) * TAMANHO_PAGINA + resultado.getNumberOfElements());
+        model.addAttribute("q", q == null ? "" : q.trim());
+        model.addAttribute("areas", repository.findAreas());
+        Map<String, Long> contagens = new HashMap<>();
+        repository.contarPorArea(termo).forEach(c -> contagens.put(c.getArea(), c.getTotal()));
+        model.addAttribute("contagens", contagens);
+        model.addAttribute("totalGeral", contagens.values().stream().mapToLong(Long::longValue).sum());
+        model.addAttribute("areaSelecionada", areaFiltro);
+        model.addAttribute("resumo", resumoService.resumo(ehAprovador(authentication)));
+        model.addAttribute("indicadores", resumoService.indicadores());
+        return "servicos";
+    }
+
+    /** Minúsculo e sem acento, como o banco compara; {@code ""} quando não há busca. */
+    private static String normalizar(String texto) {
+        if (texto == null) {
+            return "";
+        }
+        return Normalizer.normalize(texto.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+    }
+
+    private static int numeroDaPagina(String texto) {
+        try {
+            return Integer.parseInt(texto.trim());
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    private boolean ehAprovador(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_APROVADOR".equals(a.getAuthority()));
+    }
+
+    @GetMapping("/ui/busca")
+    public String busca() {
+        return "busca";
+    }
+
+    @GetMapping("/ui/servicos/{id}")
+    public String detalhe(@PathVariable Integer id, Model model) {
+        model.addAttribute("servico", repository.findById(id).orElseThrow());
+        return "servico-detalhe";
+    }
+
+    /** nbs e horario (sufixo) vêm da busca de NBS e pré-preenchem o formulário. */
+    @GetMapping("/ui/servicos/novo")
+    public String novo(@RequestParam(required = false) String nbs,
+                       @RequestParam(required = false) String horario, Model model) {
+        NovoServicoForm form = new NovoServicoForm();
+        if (nbs != null && !nbs.isBlank()) {
+            form.setCodigoNbs(nbs.trim());
+        }
+        if (horario != null && !horario.isBlank()) {
+            catHorarioRepository.findBySufixoCodigoAndAtivoTrue(horario.trim().toUpperCase(Locale.ROOT))
+                    .ifPresent(h -> form.setCondicao(h.getSufixoCodigo()));
+        }
+        model.addAttribute("form", form);
+        return formulario(model);
+    }
+
+    @PostMapping("/ui/servicos")
+    public String criar(@Valid @ModelAttribute("form") NovoServicoForm form, BindingResult binding,
+                        @RequestParam(defaultValue = "false") boolean confirmar,
+                        Authentication authentication, Model model, RedirectAttributes redirect) {
+        if (binding.hasErrors()) {
+            return formulario(model);
+        }
+        try {
+            Servico criado = service.cadastrar(form, confirmar, authentication.getName());
+            redirect.addFlashAttribute("mensagem", "Serviço " + criado.getCodigoPadronizado() + " cadastrado.");
+            return "redirect:/ui/servicos/" + criado.getId();
+        } catch (CadastroRejeitadoException e) {
+            model.addAttribute("analise", e.getAnalise());
+            return formulario(model);
+        } catch (IllegalArgumentException e) {
+            binding.reject("codigo.invalido", e.getMessage());
+            return formulario(model);
+        }
+    }
+
+    /** O comprador escolheu reaproveitar um serviço sugerido: registra a decisão e mostra o serviço escolhido. */
+    @PostMapping("/ui/servicos/reutilizar")
+    public String reutilizar(@RequestParam String textoBreve, @RequestParam Integer servicoId,
+                             Authentication authentication, RedirectAttributes redirect) {
+        try {
+            Servico escolhido = service.registrarReutilizacao(authentication.getName(), textoBreve, servicoId);
+            redirect.addFlashAttribute("mensagem", "Código " + escolhido.getCodigoPadronizado()
+                    + " reutilizado. Nenhum serviço novo foi cadastrado.");
+            return "redirect:/ui/servicos/" + escolhido.getId();
+        } catch (NoSuchElementException e) {
+            redirect.addFlashAttribute("erro", "Serviço não encontrado.");
+            return "redirect:/ui/servicos/novo";
+        }
+    }
+
+    private String formulario(Model model) {
+        NovoServicoForm form = (NovoServicoForm) model.getAttribute("form");
+        if (form != null && form.getCodigoNbs() != null && !form.getCodigoNbs().isBlank()) {
+            catNbsRepository.findById(form.getCodigoNbs().trim())
+                    .ifPresent(nbs -> model.addAttribute("nbsSelecionado", nbs));
+        }
+        model.addAttribute("condicoes", catHorarioRepository.findByAtivoTrueOrderByIdAsc());
+        model.addAttribute("areas", repository.findAreas());
+        return "servico-form";
+    }
+}

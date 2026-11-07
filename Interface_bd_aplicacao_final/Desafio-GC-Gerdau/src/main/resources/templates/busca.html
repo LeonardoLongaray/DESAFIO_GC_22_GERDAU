@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Buscar NBS')}"></head>
+<body class="app">
+<th:block th:replace="~{layout :: menu('busca')}"/>
+<main>
+    <p><a th:href="@{/}">&larr; Voltar</a></p>
+    <div class="topo">
+        <div>
+            <h1>Buscar código NBS</h1>
+            <p>Descreva o serviço e escolha a sugestão que corresponde.</p>
+        </div>
+    </div>
+
+    <input type="search" id="busca-nbs" class="busca" aria-label="Descrição do serviço"
+           placeholder="Ex.: instalação elétrica" autocomplete="off" th:attr="data-url=@{/api/nbs/busca}, data-confirmar=@{/api/de-para/confirmacoes}, data-horarios=@{/api/horarios}, data-smart-key=@{/api/smart-key}, data-cadastrar=@{/ui/servicos/novo}">
+
+    <p id="busca-status" class="contador" aria-live="polite"></p>
+    <ul id="busca-lista" class="sugestoes"></ul>
+
+    <section id="smart-key" class="smart-key" hidden aria-labelledby="sk-titulo">
+        <h2 id="sk-titulo">Código do pedido</h2>
+        <p id="sk-nbs" class="sk-nbs"></p>
+        <label class="sk-horario">Horário
+            <select id="sk-horario"></select>
+        </label>
+        <div class="sk-chave">
+            <code id="sk-chave" aria-live="polite"></code>
+            <button type="button" id="sk-copiar" class="copiar">Copiar</button>
+        </div>
+        <p><a id="sk-cadastrar" class="botao" href="#" hidden>Cadastrar serviço com este código</a></p>
+        <p id="sk-erro" class="sk-erro" role="alert"></p>
+    </section>
+</main>
+</body>
+</html>
